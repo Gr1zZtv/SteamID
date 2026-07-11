@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Find any public Steam profile's SteamID64, inspect public account details, and open the player across Steam, CS2 stats, inventory, FACEIT, and skin tools." />
+  <meta name="theme-color" content="#07111f" />
+  <title>SteamID Lookup — Find IDs, Stats, Inventory & Player Tools</title>
+  <link rel="preconnect" href="https://avatars.akamai.steamstatic.com" />
+  <link rel="preconnect" href="https://shared.akamai.steamstatic.com" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%2307111f'/%3E%3Ccircle cx='24' cy='41' r='9' fill='none' stroke='%2366c0f4' stroke-width='5'/%3E%3Ccircle cx='45' cy='20' r='10' fill='none' stroke='%2366c0f4' stroke-width='5'/%3E%3Cpath d='M31 37l8-8' stroke='%2366c0f4' stroke-width='5' stroke-linecap='round'/%3E%3C/svg%3E" />
+
+  <link rel="stylesheet" href="assets/css/styles.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="page-shell nav">
+      <a class="brand" href="#top" aria-label="SteamID Lookup home">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <circle cx="8" cy="16" r="3.4"></circle>
+            <circle cx="17" cy="7" r="4"></circle>
+            <path d="m10.5 13.6 3.7-3.7"></path>
+            <path d="M4.9 14.6 2.5 13.5"></path>
+          </svg>
+        </span>
+        <span class="brand-name">SteamID<span>Lookup</span></span>
+      </a>
+
+      <nav class="nav-links" aria-label="Main navigation">
+        <a class="nav-link" href="#how-it-works">How it works</a>
+        <a class="nav-link" href="#faq">FAQ</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="top">
+    <section class="hero">
+      <div class="page-shell">
+        <div class="eyebrow"><span class="eyebrow-dot"></span>No login or Steam API key required</div>
+        <h1>Find any public <span class="gradient-text">SteamID64</span></h1>
+        <p class="hero-copy">
+          Paste a Steam profile link, custom URL, or 17-digit SteamID64. Get the account ID and available public profile details in seconds.
+        </p>
+
+        <div class="lookup-card">
+          <form id="lookupForm" class="lookup-form" novalidate>
+            <div class="input-wrap">
+              <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                <circle cx="11" cy="11" r="7"></circle>
+                <path d="m20 20-4-4"></path>
+              </svg>
+              <label class="sr-only" for="profileInput">Steam profile URL, vanity name, or SteamID64</label>
+              <input
+                id="profileInput"
+                type="text"
+                autocomplete="off"
+                autocapitalize="none"
+                spellcheck="false"
+                placeholder="steamcommunity.com/id/username"
+              />
+              <button id="clearButton" class="clear-button" type="button" aria-label="Clear input">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="17" height="17">
+                  <path d="m6 6 12 12M18 6 6 18"></path>
+                </svg>
+              </button>
+            </div>
+
+            <button id="lookupButton" class="submit-button" type="submit">
+              <span id="buttonIcon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M5 12h14M13 6l6 6-6 6"></path>
+                </svg>
+              </span>
+              <span id="buttonText">Find Steam ID</span>
+            </button>
+          </form>
+
+          <div class="lookup-meta">
+            <div class="trust-list">
+              <span class="trust-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="m5 12 4 4L19 6"></path>
+                </svg>
+                Public data only
+              </span>
+              <span class="trust-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="m5 12 4 4L19 6"></path>
+                </svg>
+                Nothing stored
+              </span>
+            </div>
+
+            <div class="example-list">
+              <span>Try:</span>
+              <button class="example-button" type="button" data-example="https://steamcommunity.com/id/contentking">custom URL</button>
+              <button class="example-button" type="button" data-example="76561198824832322">SteamID64</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="status" class="status-box" role="status" aria-live="polite"></div>
+      </div>
+    </section>
+
+    <section id="results" class="results-shell page-shell" aria-label="Steam profile result">
+      <div class="result-grid">
+        <article class="card profile-card">
+          <div class="profile-main">
+            <div class="avatar-wrap">
+              <img id="profileAvatar" class="profile-avatar" alt="" />
+              <span id="presenceDot" class="presence-dot"></span>
+            </div>
+
+            <div class="profile-identity">
+              <p class="profile-kicker">Steam profile found</p>
+              <h2 id="profileName" class="profile-name">Steam user</h2>
+              <p id="profileState" class="profile-state"></p>
+              <div id="profileBadges" class="profile-badges"></div>
+            </div>
+
+            <div class="profile-actions">
+              <a id="openProfileButton" class="button primary" href="#" target="_blank" rel="noopener noreferrer">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9">
+                  <path d="M14 5h5v5"></path>
+                  <path d="m10 14 9-9"></path>
+                  <path d="M19 13v5a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h5"></path>
+                </svg>
+                Open on Steam
+              </a>
+              <button id="copyProfileButton" class="button" type="button">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9">
+                  <rect x="8" y="8" width="11" height="11" rx="2"></rect>
+                  <path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"></path>
+                </svg>
+                Copy profile URL
+              </button>
+            </div>
+          </div>
+        </article>
+
+        <section class="card launchpad-card" aria-labelledby="launchpadTitle">
+          <div class="launchpad-heading">
+            <div>
+              <h2 id="launchpadTitle">Open this player everywhere</h2>
+              <p>Jump directly to Steam and supported CS2 tools. Sites that cannot build a profile URL from SteamID64 will open with the ID already copied for pasting.</p>
+            </div>
+            <span class="launchpad-count">10 useful links</span>
+          </div>
+
+          <div id="toolGrid" class="tool-grid"></div>
+
+          <p class="launchpad-note">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <circle cx="12" cy="12" r="9"></circle>
+              <path d="M12 11v5M12 8h.01"></path>
+            </svg>
+            External services are independent websites. A private inventory, missing FACEIT connection, or untracked profile may return limited or no results.
+          </p>
+        </section>
+
+        <div class="result-column">
+          <section class="card section-card">
+            <div class="section-heading">
+              <h2>Account identity</h2>
+              <span class="section-label">Public Steam data</span>
+            </div>
+
+            <div class="id-box">
+              <div class="id-label">SteamID64</div>
+              <div id="steamIdValue" class="id-value">—</div>
+              <button id="copyIdButton" class="icon-button" type="button" aria-label="Copy SteamID64">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9">
+                  <rect x="8" y="8" width="11" height="11" rx="2"></rect>
+                  <path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"></path>
+                </svg>
+              </button>
+            </div>
+
+            <div id="detailGrid" class="detail-grid"></div>
+          </section>
+
+          <section id="gamesSection" class="card section-card" hidden>
+            <div class="section-heading">
+              <h2>Most played</h2>
+              <span id="gamesCount" class="section-label"></span>
+            </div>
+            <div id="gamesList"></div>
+          </section>
+        </div>
+
+        <div class="result-column">
+          <section class="card section-card">
+            <div class="section-heading">
+              <h2>Profile summary</h2>
+            </div>
+            <div id="profileSummary" class="summary-text"></div>
+          </section>
+
+          <section class="card section-card">
+            <div class="section-heading">
+              <h2>Public groups</h2>
+              <span id="groupsCount" class="section-label"></span>
+            </div>
+            <div id="groupsList" class="group-list"></div>
+
+            <details class="technical-details">
+              <summary>View raw XML response</summary>
+              <pre id="rawXml"></pre>
+            </details>
+          </section>
+        </div>
+      </div>
+    </section>
+
+    <section id="how-it-works" class="content-section">
+      <div class="page-shell">
+        <div class="section-intro">
+          <h2>One link. The useful account details.</h2>
+          <p>The lookup accepts the common Steam profile formats and presents the public account information in a cleaner, easier-to-copy format.</p>
+        </div>
+
+        <div class="feature-grid">
+          <article class="feature">
+            <div class="feature-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9">
+                <path d="M4 7h16M4 12h16M4 17h10"></path>
+              </svg>
+            </div>
+            <h3>Multiple input formats</h3>
+            <p>Paste a full <strong>/id/</strong> vanity URL, a numeric <strong>/profiles/</strong> URL, a vanity name, or a raw 17-digit SteamID64.</p>
+          </article>
+
+          <article class="feature">
+            <div class="feature-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9">
+                <path d="M12 3 4 7v5c0 5 3.4 8 8 9 4.6-1 8-4 8-9V7l-8-4Z"></path>
+                <path d="m9 12 2 2 4-4"></path>
+              </svg>
+            </div>
+            <h3>Public information only</h3>
+            <p>The page reads information Steam already exposes publicly. It never asks for a password, account login, or trade token.</p>
+          </article>
+
+          <article class="feature">
+            <div class="feature-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9">
+                <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"></path>
+              </svg>
+            </div>
+            <h3>Fast, lightweight lookup</h3>
+            <p>Numeric SteamIDs are detected locally. Vanity URLs are resolved from Steam’s public profile XML without requiring your own Steam API key.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="faq" class="content-section">
+      <div class="page-shell">
+        <div class="section-intro">
+          <h2>Common questions</h2>
+        </div>
+
+        <div class="faq-list">
+          <details class="faq-item">
+            <summary>What is a SteamID64?</summary>
+            <p>A SteamID64 is the unique 17-digit identifier attached to a Steam account. Unlike a display name or custom profile URL, it does not change.</p>
+          </details>
+          <details class="faq-item">
+            <summary>Does this work with private profiles?</summary>
+            <p>The SteamID64 can still often be resolved, but private profiles may hide account details such as playtime, location, profile text, and groups.</p>
+          </details>
+          <details class="faq-item">
+            <summary>Is a Steam API key required?</summary>
+            <p>No Steam API key is required for this lookup. The page uses Steam’s public profile XML. A hosted version should use its own small proxy or serverless function to handle browser CORS restrictions.</p>
+          </details>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="page-shell footer-inner">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <circle cx="8" cy="16" r="3.4"></circle>
+            <circle cx="17" cy="7" r="4"></circle>
+            <path d="m10.5 13.6 3.7-3.7"></path>
+            <path d="M4.9 14.6 2.5 13.5"></path>
+          </svg>
+        </span>
+        <span class="brand-name">SteamID<span>Lookup</span></span>
+      </div>
+      <div class="footer-note">Not affiliated with Valve or Steam. Steam and the Steam logo are trademarks of Valve Corporation.</div>
+    </div>
+  </footer>
+
+  <div id="toast" class="toast" role="status" aria-live="polite">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="m5 12 4 4L19 6"></path>
+    </svg>
+    <span id="toastText">Copied</span>
+  </div>
+
+  <script src="assets/js/app.js"></script>
+</body>
+</html>
