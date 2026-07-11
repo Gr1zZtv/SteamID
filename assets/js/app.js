@@ -338,6 +338,13 @@ function stateLabel(value) {
   return value || "Status unavailable";
 }
 
+function visibilityLabel(value) {
+  if (value === "3") return "Public";
+  if (value === "2") return "Friends only";
+  if (value === "1") return "Private";
+  return value || "Unknown";
+}
+
 function safeNumber(value) {
   const parsed = Number(String(value || "").replace(/,/g, ""));
   return Number.isFinite(parsed) ? parsed : null;
@@ -444,8 +451,14 @@ function renderGames(games) {
   gamesCount.textContent = usefulGames.length ? `${usefulGames.length} shown` : "";
 
   usefulGames.forEach(game => {
-    const card = document.createElement("article");
+    const card = document.createElement(game.gameLink ? "a" : "article");
     card.className = "game-card";
+    if (game.gameLink) {
+      card.href = game.gameLink;
+      card.target = "_blank";
+      card.rel = "noopener noreferrer";
+      card.setAttribute("aria-label", `Open ${game.gameName} on Steam`);
+    }
 
     const image = document.createElement("img");
     image.className = "game-image";
@@ -525,6 +538,7 @@ function renderGroups(groups) {
     const metaParts = [];
     if (group.memberCount) metaParts.push(`${formatNumber(group.memberCount)} members`);
     if (group.membersOnline) metaParts.push(`${formatNumber(group.membersOnline)} online`);
+    if (group.membersInGame) metaParts.push(`${formatNumber(group.membersInGame)} in game`);
     if (!metaParts.length && group.headline) metaParts.push(stripBasicHtml(group.headline));
     meta.textContent = metaParts.join(" • ") || group.groupID64;
 
@@ -711,9 +725,16 @@ function renderProfile(data, submittedProfile, xmlText) {
   }
   addDetail("Custom URL", data.customURL ? `/id/${data.customURL}` : "Not set");
   addDetail("Member since", data.memberSince || "Not public");
+  addDetail("Profile headline", stripBasicHtml(data.headline) || "Not set");
   addDetail("Location", data.location || "Not public");
+  if (safeNumber(data.hoursPlayed2Wk) > 0) {
+    addDetail("Played in the last 2 weeks", `${data.hoursPlayed2Wk} hours`);
+  }
+  if (data.steamRating) {
+    addDetail("Steam rating", data.steamRating);
+  }
   addDetail("Account type", data.isLimitedAccount === "1" ? "Limited" : data.isLimitedAccount === "0" ? "Not limited" : "Unknown");
-  addDetail("Visibility", data.visibilityState || "Unknown");
+  addDetail("Profile visibility", visibilityLabel(data.visibilityState));
   addDetail("Real name", data.realname || "Not public");
 
   renderGames(data.games);
