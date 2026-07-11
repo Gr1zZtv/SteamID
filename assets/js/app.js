@@ -73,7 +73,7 @@ function clearStatus() {
 
 function setLoading(isLoading) {
   lookupButton.disabled = isLoading;
-  buttonText.textContent = isLoading ? "Looking up…" : "Find Steam ID";
+  buttonText.textContent = isLoading ? "Searching…" : "Search Steam";
   buttonIcon.innerHTML = isLoading
     ? '<span class="spinner" aria-hidden="true"></span>'
     : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>';
@@ -87,7 +87,7 @@ function normalizeProfileInput(rawValue) {
   const value = rawValue.trim();
 
   if (!value) {
-    throw new Error("Paste a Steam profile URL, vanity name, or SteamID64.");
+    throw new Error("Enter a Steam username, ID, or profile URL.");
   }
 
   if (STEAM_ID_64_PATTERN.test(value)) {
@@ -659,7 +659,7 @@ function renderToolLinks(steamId64) {
 
     if (tool.copyFirst) {
       link.addEventListener("click", () => {
-        copyText(steamId64, `SteamID64 copied for ${tool.name}`);
+        copyText(steamId64, `Steam ID copied for ${tool.name}`);
       });
     }
 
@@ -776,7 +776,7 @@ async function runLookup(rawValue) {
     updateQueryParameter(rawValue.trim());
 
     if (submittedProfile.steamId64) {
-      setStatus(`SteamID64 detected. Loading the public profile for ${submittedProfile.steamId64}…`, "info");
+      setStatus(`Steam ID detected. Loading the public profile…`, "info");
     } else {
       setStatus(`Resolving the custom profile “${submittedProfile.value}”…`, "info");
     }
@@ -786,7 +786,7 @@ async function runLookup(rawValue) {
     const data = parseProfileXml(xmlText);
 
     renderProfile(data, submittedProfile, xmlText);
-    setStatus(`Profile found${data.steamID64 ? ` — SteamID64 ${data.steamID64}` : ""}.`, "success");
+    setStatus("Steam profile found.", "success");
   } catch (error) {
     const message = error?.name === "AbortError"
       ? "The lookup timed out. Try again in a moment."
@@ -821,7 +821,7 @@ document.querySelectorAll("[data-example]").forEach(button => {
   });
 });
 
-copyIdButton.addEventListener("click", () => copyText(activeSteamId64, "SteamID64 copied"));
+copyIdButton.addEventListener("click", () => copyText(activeSteamId64, "Steam ID copied"));
 copyProfileButton.addEventListener("click", () => copyText(activeProfileUrl, "Profile URL copied"));
 
 const initialProfile = new URLSearchParams(window.location.search).get("profile");
