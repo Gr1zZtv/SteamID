@@ -31,8 +31,22 @@ const toastText = document.getElementById("toastText");
 
 const STEAM_ID_64_PATTERN = /^\d{17}$/;
 const VANITY_PATTERN = /^[A-Za-z0-9_-]{2,64}$/;
-const REQUEST_TIMEOUT_MS = 20000;
-const TEST_PROXY_PREFIX = "https://api.allorigins.win/raw?url=";
+const PROXY_ATTEMPT_TIMEOUT_MS = 10000;
+const PROXY_HEDGE_DELAY_MS = 1200;
+const CORS_PROXIES = [
+  {
+    name: "AllOrigins",
+    makeUrl: target => `https://api.allorigins.win/raw?url=${encodeURIComponent(target)}`
+  },
+  {
+    name: "CorsProxy.io",
+    makeUrl: target => `https://corsproxy.io/?url=${encodeURIComponent(target)}`
+  },
+  {
+    name: "CodeTabs",
+    makeUrl: target => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(target)}`
+  }
+];
 
 let activeProfileUrl = "";
 let activeSteamId64 = "";
@@ -154,8 +168,7 @@ function makeXmlUrl(profile) {
   return `https://steamcommunity.com/${profile.type}/${encodeURIComponent(profile.value)}/?xml=1`;
 }
 
-async function fetchWithTimeout(url, timeoutMs) {
-  const controller = new AbortController();
+async function fetchWithTimeout(url, timeoutMs, controller) {
   const timer = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
@@ -172,6 +185,51 @@ async function fetchWithTimeout(url, timeoutMs) {
     return await response.text();
   } finally {
     clearTimeout(timer);
+  }
+}
+
+function delay(milliseconds) {
+  return new Promise(resolve => setTimeout(resolve, milliseconds));
+}
+
+function isSteamXml(xmlText) {
+  const xml = new DOMParser().parseFromString(xmlText, "application/xml");
+  return !xml.querySelector("parsererror") && Boolean(xml.querySelector("profile, error, privacyMessage"));
+}
+
+async function fetchSteamXml(xmlUrl) {
+  const controllers = CORS_PROXIES.map(() => new AbortController());
+  let complete = false;
+
+  const attempts = CORS_PROXIES.map(async (proxy, index) => {
+    if (index > 0) {
+      await delay(index * PROXY_HEDGE_DELAY_MS);
+    }
+
+    if (complete) {
+      throw new DOMException("A faster proxy already responded.", "AbortError");
+    }
+
+    const xmlText = await fetchWithTimeout(
+      proxy.makeUrl(xmlUrl),
+      PROXY_ATTEMPT_TIMEOUT_MS,
+      controllers[index]
+    );
+
+    if (!isSteamXml(xmlText)) {
+      throw new Error(`${proxy.name} returned an invalid response.`);
+    }
+
+    return xmlText;
+  });
+
+  try {
+    const xmlText = await Promise.any(attempts);
+    complete = true;
+    controllers.forEach(controller => controller.abort());
+    return xmlText;
+  } catch {
+    throw new Error("All lookup services are currently unavailable. Try again shortly.");
   }
 }
 
@@ -700,8 +758,7 @@ async function runLookup(rawValue) {
     }
 
     const xmlUrl = makeXmlUrl(submittedProfile);
-    const requestUrl = `${TEST_PROXY_PREFIX}${encodeURIComponent(xmlUrl)}`;
-    const xmlText = await fetchWithTimeout(requestUrl, REQUEST_TIMEOUT_MS);
+    const xmlText = await fetchSteamXml(xmlUrl);
     const data = parseProfileXml(xmlText);
 
     renderProfile(data, submittedProfile, xmlText);
@@ -713,7 +770,7 @@ async function runLookup(rawValue) {
         ? error.message
         : "The Steam profile could not be loaded.";
 
-    setStatus(`${message} The public test proxy may also be temporarily unavailable.`, "error");
+    setStatus(message, "error");
   } finally {
     setLoading(false);
   }
