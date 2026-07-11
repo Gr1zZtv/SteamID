@@ -168,6 +168,23 @@ function makeXmlUrl(profile) {
   return `https://steamcommunity.com/${profile.type}/${encodeURIComponent(profile.value)}/?xml=1`;
 }
 
+function convertSteamId64(steamId64) {
+  if (!STEAM_ID_64_PATTERN.test(steamId64)) return null;
+
+  const accountId = BigInt(steamId64) - 76561197960265728n;
+  if (accountId < 0n) return null;
+
+  const authenticationServer = accountId % 2n;
+  const accountNumber = accountId / 2n;
+
+  return {
+    accountId: accountId.toString(),
+    steamId2: `STEAM_0:${authenticationServer}:${accountNumber}`,
+    steamId3: `[U:1:${accountId}]`,
+    profilePath: `/profiles/${steamId64}`
+  };
+}
+
 async function fetchWithTimeout(url, timeoutMs, controller) {
   const timer = setTimeout(() => controller.abort(), timeoutMs);
 
@@ -685,6 +702,13 @@ function renderProfile(data, submittedProfile, xmlText) {
   renderToolLinks(resolvedId);
 
   detailGrid.replaceChildren();
+  const convertedIds = convertSteamId64(resolvedId);
+  if (convertedIds) {
+    addDetail("SteamID2", convertedIds.steamId2);
+    addDetail("SteamID3", convertedIds.steamId3);
+    addDetail("AccountID", convertedIds.accountId);
+    addDetail("Profile path", convertedIds.profilePath);
+  }
   addDetail("Custom URL", data.customURL ? `/id/${data.customURL}` : "Not set");
   addDetail("Member since", data.memberSince || "Not public");
   addDetail("Location", data.location || "Not public");
